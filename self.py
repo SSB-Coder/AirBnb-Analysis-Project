@@ -4,14 +4,12 @@ import numpy as np
 import plotly.express as px
 from sklearn.ensemble import RandomForestRegressor
 
-# --- 1. CONFIGURATION ---
 st.set_page_config(
     page_title="Airbnb Data Science Project",
     page_icon="🏠",
     layout="wide"
 )
 
-# --- 2. DATA ENGINE ---
 @st.cache_data
 def load_and_prep_data():
     listings = pd.read_csv('listi.csv')
@@ -20,7 +18,6 @@ def load_and_prep_data():
     fut = pd.read_csv('fut.csv')
     reviews = pd.read_csv('reviews.csv')
 
-    # Cleaning
     listings['guests'] = listings['guests'].fillna(1)
     listings['bedrooms'] = listings['bedrooms'].fillna(listings['bedrooms'].median())
     listings['beds'] = listings['beds'].fillna(1)
@@ -28,7 +25,6 @@ def load_and_prep_data():
     listings['ttm_avg_rate'] = listings['ttm_avg_rate'].fillna(listings['ttm_avg_rate'].mean())
     listings['room_type'] = listings['room_type'].fillna('Unknown')
 
-    # ML Preprocessing
     room_dummies = pd.get_dummies(listings['room_type'], prefix='room')
     listings_ml = pd.concat([listings, room_dummies], axis=1)
     
@@ -36,7 +32,6 @@ def load_and_prep_data():
     room_features = list(room_dummies.columns)
     features = base_features + room_features
 
-    # Train Model
     ml_df = listings_ml.dropna(subset=['ttm_avg_rate'])
     ai = RandomForestRegressor(n_estimators=100, random_state=42)
     ai.fit(ml_df[features], ml_df['ttm_avg_rate'])
@@ -46,10 +41,8 @@ def load_and_prep_data():
 
     return listings, past, fut, reviews, ai, features
 
-# Initialize Data
 listings, past, fut, reviews, ai, features = load_and_prep_data()
 
-# --- 3. HOME / HERO SECTION ---
 col_spacer_left, col_hero, col_spacer_right = st.columns([1, 2, 1])
 
 with col_hero:
@@ -63,10 +56,8 @@ with col_hero:
     st.markdown("**Data Source:** [AirROI Paris Market Data](https://www.airroi.com/data-portal/markets/paris-france)")
     st.write("Scroll down to explore market trends and use our AI price predictor.")
     
-    # Visual anchor
     st.markdown("---")
 
-# --- 4. MARKET EXPLORER SECTION ---
 st.header(" Market Explorer")
 st.write("Dive into the Paris Airbnb market with interactive maps and key metrics.")
 
@@ -109,7 +100,6 @@ st.plotly_chart(fig_rev, use_container_width=True)
 
 st.divider()
 
-# --- 5. RECOMMENDATIONS SECTION ---
 st.header("✨ AI Recommendations")
 col_pref, col_rec = st.columns([1, 2])
 with col_pref:
@@ -134,7 +124,6 @@ with col_rec:
 
 st.divider()
 
-# --- 6. AI PRICE PREDICTOR SECTION ---
 st.header("🤖 AI Price Predictor")
 col_input, col_output = st.columns([1, 1])
 
@@ -146,7 +135,6 @@ with col_input:
     p_guests = st.number_input("Guests", 1, 20, 2)
     p_type = st.selectbox("Room Type Selection", options=listings['room_type'].unique())
 
-    # Align prediction features
     input_data = pd.DataFrame([[p_rooms, p_beds, p_baths, p_guests]], columns=['bedrooms', 'beds', 'baths', 'guests'])
     for f in features:
         if f.startswith('room_'):
@@ -161,11 +149,3 @@ with col_output:
     imp_df = pd.DataFrame({'Feature': features, 'Importance': ai.feature_importances_}).sort_values('Importance')
     st.bar_chart(imp_df.set_index('Feature'))
 
-# --- 7. FOOTER ---
-st.divider()
-st.header("Tech Stack")
-t1, t2, t3, t4 = st.columns(4)
-t1.info("**Frontend**\n\nStreamlit")
-t2.info("**Data**\n\nPandas & NumPy")
-t3.info("**Viz**\n\nPlotly Express")
-t4.info("**ML**\n\nScikit-Learn")
